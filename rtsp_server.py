@@ -2,73 +2,56 @@
 # -*- coding:utf-8 vi:ts=4:noexpandtab
 # Simple RTSP server. Run as-is or with a command-line to replace the default pipeline
 
-import os
+""" Для получения доступа к трансляции необходимо ввести ссылку "rtsp://..." (выводится при запуске сервера) в проигрыватель rtsp потоков, например плеер vlc"""
+
+import sys
 import gi
-import threading
-import time
+import os
+
 gi.require_version('Gst', '1.0')
 gi.require_version('GstRtspServer', '1.0')
 from gi.repository import Gst, GstRtspServer, GLib
 
 loop = GLib.MainLoop()
-# GLib.threads_init()
 Gst.init(None)
 
-W = 640
-H = 480
+
+# Функция для получения IP робота
+def getIP():
+    res = os.popen('hostname -I | cut -d\' \' -f1').readline().replace('\n', '')  # получаем IP, удаляем \n
+    return res
 
 
-# старый пайплайн (работает)
-piplineRtspEduBot = "v4l2src device=/dev/video0 ! video/x-raw, width=320, height=240, framerate=10/1, pixel-aspect-ratio=1/1 ! \
-                                gdkpixbufoverlay location=battery.png offset-x=0 offset-y=0 overlay-height=40 overlay-width=40 ! v4l2h264enc ! rtph264pay name=pay0 pt=96"
-pipline2 = " v4l2src device=/dev/video0 ! video/x-raw, width=640, height=480 ! videoconvert ! \
-                                          rsvgoverlay location=test.svg ! videoconvert ! xvimagesink alsasrc device=plughw:CARD=2,DEV=0 ! audioconvert ! autoaudiosink "
-"""xvimagesink"""
-
-""" videotestsrc pattern=smpte ! video/x-raw, width=640, height=480, framerate=30/1 ! autovideoconvert ! rsvgoverlay name=overlay ! autovideoconvert ! x264enc ! rtph264pay name=pay0 pt=96 """
-
-class PotatoCamFactory(GstRtspServer.RTSPMediaFactory):
+# функция для формирования пайплайна
+class CamFactory(GstRtspServer.RTSPMediaFactory):
     def __init__(self):
         GstRtspServer.RTSPMediaFactory.__init__(self)
 
     def do_create_element(self, url):
-        pipeline_str = "v4l2src device=/dev/video0 ! video/x-raw, width=640, height=480 ! autovideoconvert ! x264enc ! rtph264pay name=pay0 pt=96"
-
-        pipeline = Gst.parse_launch(pipeline_str) # Создание пайплайна
+        pipeline_str = "( v4l2src device=/dev/video0 ! video/x-raw, width=640, height=480 ! v4l2h264enc ! rtph264pay name=pay0 pt=96 )"
         print(pipeline_str)
-        return pipeline
+        return Gst.parse_launch(pipeline_str)
 
 
-###################
-"""Возвращает ip"""
-###################
-def getIP():
-    res = os.popen('hostname -I | cut -d\' \' -f1').readline().replace('\n','') #получаем IP, удаляем \n
-    return res
-
-
-
-# Порт: 5554. Камера: potato.
-class PotatoServer():
+# класс сервера
+class Server():
     def __init__(self):
-        self.PotatoServer = GstRtspServer.RTSPServer.new()
-        self.PotatoServer.set_service('5554')
+        self.Server = GstRtspServer.RTSPServer.new()
+        self.Server.set_service('5554')
 
-        self.potatoCam = PotatoCamFactory()
-        self.potatoCam.set_shared(True)
+        Cam = CamFactory()
+        Cam.set_shared(True)
 
-        m = self.PotatoServer.get_mount_points()
-        m.add_factory("/potato", self.potatoCam)
+        m = self.Server.get_mount_points()
+        m.add_factory("/edubot", Cam)
 
-        self.PotatoServer.attach(None)
+        self.Server.attach(None)
 
-        port_PotatoServer = self.PotatoServer.get_bound_port()
-        print('RTSP server started: rtsp://%s:%d/front' % (getIP(), port_PotatoServer))
+        portServer = self.Server.get_bound_port()
+        print(
+            'RTSP server started: rtsp://%s:%d/front' % (getIP(), portServer))  # Вывод ссылки для подключения к серверу
 
 
 if __name__ == '__main__':
-    print(4)
-    s1 = PotatoServer()
-
+    server = Server()  # инициализация сервера
     loop.run()
-    print(6)
