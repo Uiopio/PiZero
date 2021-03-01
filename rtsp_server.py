@@ -2,14 +2,13 @@
 # -*- coding:utf-8 vi:ts=4:noexpandtab
 # Simple RTSP server. Run as-is or with a command-line to replace the default pipeline
 
-
+import os
 import gi
 import threading
 import time
 gi.require_version('Gst', '1.0')
 gi.require_version('GstRtspServer', '1.0')
 from gi.repository import Gst, GstRtspServer, GLib
-from PIL import ImageFont
 
 loop = GLib.MainLoop()
 # GLib.threads_init()
@@ -17,11 +16,7 @@ Gst.init(None)
 
 W = 640
 H = 480
-COLOR = 'lime'
-FONT = 'arial'
-FSIZE = '30px'
-TIMER_SEC = 10
-font = ImageFont.truetype("arial.ttf", 30)
+
 
 # старый пайплайн (работает)
 piplineRtspEduBot = "v4l2src device=/dev/video0 ! video/x-raw, width=320, height=240, framerate=10/1, pixel-aspect-ratio=1/1 ! \
@@ -44,6 +39,14 @@ class PotatoCamFactory(GstRtspServer.RTSPMediaFactory):
         return pipeline
 
 
+###################
+"""Возвращает ip"""
+###################
+def getIP():
+    res = os.popen('hostname -I | cut -d\' \' -f1').readline().replace('\n','') #получаем IP, удаляем \n
+    return res
+
+
 
 # Порт: 5554. Камера: potato.
 class PotatoServer():
@@ -60,7 +63,7 @@ class PotatoServer():
         self.PotatoServer.attach(None)
 
         port_PotatoServer = self.PotatoServer.get_bound_port()
-        print("PotatoServer готов. Порт сервера:", port_PotatoServer, "/potato")
+        print('RTSP server started: rtsp://%s:%d/front' % (getIP(), port_PotatoServer))
 
 
 if __name__ == '__main__':
