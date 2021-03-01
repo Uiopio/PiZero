@@ -2,16 +2,14 @@
 # -*- coding:utf-8 vi:ts=4:noexpandtab
 # Simple RTSP server. Run as-is or with a command-line to replace the default pipeline
 
-import sys
+
 import gi
 import threading
 import time
-import svgwrite
 gi.require_version('Gst', '1.0')
 gi.require_version('GstRtspServer', '1.0')
 from gi.repository import Gst, GstRtspServer, GLib
 from PIL import ImageFont
-from multiprocessing import Process
 
 loop = GLib.MainLoop()
 # GLib.threads_init()
