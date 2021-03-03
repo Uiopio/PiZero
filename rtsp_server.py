@@ -32,7 +32,8 @@ class CamFactory(GstRtspServer.RTSPMediaFactory):
 
     def do_create_element(self, url):
         #pipeline_str = "( v4l2src device=/dev/video0 ! video/x-raw, width=640, height=480, framerate=15/1, pixel-aspect-ratio=1/1 ! videorate ! v4l2h264enc ! rtph264pay name=pay0 pt=96 )"
-        pipeline_str = "( v4l2src do-timestamp=true ! image/jpeg, width=640, height=480, framerate=30/1 ! jpegparse ! rtpjpegpay name=pay0 )"
+        # pipeline_str = "( v4l2src do-timestamp=true ! image/jpeg, width=640, height=480, framerate=30/1 ! jpegparse ! rtpjpegpay name=pay0 )"
+        pipeline_str = "( v4l2src do-timestamp=true ! video/x-raw, format=YUY2, width=640, height=480, framerate=30/1 ! jpegenc ! rtpjpegpay name=pay0 pt=96)"
         print(pipeline_str)
         return Gst.parse_launch(pipeline_str)
 
